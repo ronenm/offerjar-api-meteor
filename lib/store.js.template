@@ -1,0 +1,141 @@
+var Connector = OfferJar.Connector;
+
+var Store = function(token) {
+  Connector.call(this,token);
+}
+
+OfferJar.Store = Store;
+
+var proto = Store.prototype = Object.create(Connector.prototype);
+
+proto.constructor = Store;
+
+proto.connect = function(uid,callback) {
+  this.uid = uid;
+  return this.load(callback);
+}
+
+// rec is optional
+proto.load = function(rec,callback) {
+  if (typeof(rec) == 'object') {
+    this.store_rec = rec;
+    if (typeof(callback) == 'function') {
+      callback.call(this.false,undefined,rec);
+    }
+    return rec;
+  } else {
+    if (typeof(rec) == 'function') {
+      callback = rec;
+    }
+    
+    if (typeof(callback) == 'function') {
+      var self = this;
+      return this.get(undefined,function (error, result) {
+        if (!error) {
+          self.store_rec = result.data;
+        }
+        callback.call(this,error,result);
+      });
+    } else {
+      var result = this.get();
+      this.store_rec = result.data;
+      return this.store_rec;
+    }
+  }
+}
+
+proto.create_by_client_id = function(client_id,client_secret,add_params,callback) {
+  if (typeof(callback) == 'function') {
+    var self = this;
+    return this.parent.generateToken(client_id,client_secret,function(error, result) {
+      var token_rec = result.body.token;
+      if (token_rec.error) {
+        error = new Meteor.Error("token-error", token_rec.error);
+        callback.call(this,error,result);
+      } else if (!token_rec.access_token) {
+        callback.call(this,error || new Meteor.Error('token-error','Missing token'),result);
+      } else {
+        self.create_by_token(token_rec.access_token,add_params,callback);
+      }
+    });
+  } else {
+    var result = this.parent.generateToken(client_id,client_secret);
+    var token_rec = result.body.token;
+    if (token_rec.error) {
+      throw new Meteor.Error("token-error", token_rec.error);
+    } else if (!token_rec.access_token) {
+      throw new Meteor.Error("token-error", 'Missing token');
+    } else {
+      return self.create_by_token(token_rec.access_token,add_params);
+    }
+  }
+  
+}
+
+proto.create_by_token = function(token,add_params,callback) {
+  var self = this;
+  if (typeof(callback) == 'function') {
+    return this.create(add_params,function(error,result) {
+      var body = result.data;
+      if (!body.store || !body.store.uid) {
+        if (body.error) {
+          callback.call(this,new Meteor.Error('create-failed',body.error),result);
+        } else {
+          callback.call(this,error || new Meteor.Error('create-failed','Unable to create Conversation proxy'),result);
+        }
+      } else {
+        self.store_rec = body;
+        self.uid = body.store.uid;
+        callback.call(this,error,result);
+      }
+    });
+  } else {
+    var result = this.create(add_params);
+    var body = result.data;
+    if (!body.store || !body.store.uid) {
+      if (body.error) {
+        throw new Meteor.Error('create-failed',body.error);
+      } else {
+        throw new Meteor.Error('create-failed','Unable to create Conversation proxy');
+      }
+    } else {
+      self.store_rec = body;
+      self.uid = body.store.uid;
+      return self.store_rec;
+    }
+  }
+}
+
+//|OUTPUT_HERE|
+
+////##################################################################################
+//// upload_product_image: Upload an image
+////
+//// Parameters:
+////    rid (String): A valid product id
+////    file_name (String): The file name to upload from (in the local file system)
+////
+//// Hashed Parameters: (pass to the add_params hash)
+////    title (Optional,String): The title of the image
+////
+////##################################################################################
+//Store.prototype.upload_product_image = function(rid, file_name, add_params, callback) {
+//  var splitted_path = file_name.split("/")
+//  var p_name = splitted_path.pop();
+//  var this_obj = this;
+//  var params = {
+//     uid: this.uid,
+//     rid: rid
+//  }
+//  fs.readFile(file_name,{ encoding: 'base64'}, function(err,data) {
+//    if (err) throw err;
+//    add_params.file = {
+//      filename: p_name,
+//      content: data
+//    }
+//    add_params.send_xml = true;
+//    this_obj.api_call('/stores/:uid/products/:rid/images/upload', 'post', params, add_params,callback);
+//  });
+//}
+
+

@@ -1,0 +1,100 @@
+var Connector = OfferJar.Connector;
+
+var PartnerProxy = function(token) {
+  Connector.call(this,token);
+}
+
+OfferJar.PartnerProxy = PartnerProxy;
+
+var proto = PartnerProxy.prototype = Object.create(Connector.prototype);
+
+proto.constructor = PartnerProxy;
+
+proto.connect = function(uid,callback) {
+  this.uid = uid;
+  return this.load(callback);
+}
+
+// rec is optional
+proto.load = function(rec,callback) {
+  if (typeof(rec) == 'object') {
+    this.partner_record = rec;
+    if (typeof(callback) == 'function') {
+      callback.call(this.false,undefined,rec);
+    }
+    return rec;
+  } else {
+    if (typeof(rec) == 'function') {
+      callback = rec;
+    }
+    
+    if (typeof(callback) == 'function') {
+      var self = this;
+      return this.get(undefined,function (error, result) {
+        if (!error) {
+          self.partner_record = result.data;
+        }
+        callback.call(this,error,result);
+      });
+    } else {
+      var result = this.get();
+      this.partner_record = result.data;
+      return this.partner_record;
+    }
+  }
+}
+
+proto.authenticate_me = function(uid,client_id,client_secret,add_params,callback) {
+  if (typeof(callback) == 'function') {
+    var self = this;
+    return this.parent.generateToken(client_id,client_secret,function(error, result) {
+      var body = result.data;
+      var token_rec = body.token;
+      if (token_rec.error) {
+        callback.call(this,new Meteor.Error('token-error',token_rec.error),result);
+      } else if (!token_rec.access_token) {
+        callback.call(this,error || new Meteor.Error('token-error', "Missing token"),result);
+      } else {
+        self.uid = uid;
+        self.authenticate(add_params,function(error,result) {
+          var body = result.data;
+          if (!body.partner) {
+            if (body.error) {
+              callback.call(this,new Meteor.Error('auth-error', body.error),result);
+            } else {
+              callback.call(this,error || new Meteor.Error('auth-error', 'Unable to authenticate Partner proxy'),result);
+            }
+          } else {
+            self.partner_record = body;
+            callback.call(this,error,result);
+          }
+        });
+      }
+    });  
+  } else {
+    result = this.parent.generateToken(client_id,client_secret);
+    var body = result.data;
+    var token_rec = body.token;
+    if (token_rec.error) {
+      throw new Meteor.Error('token-error',token_rec.error);
+    } else if (!token_rec.access_token) {
+      throw new Meteor.Error('token-error', "Missing token");
+    } else {
+      self.uid = uid;
+      var result = self.authenticate(add_params);
+      var body = result.data;
+      if (!body.partner) {
+        if (body.error) {
+          throw new Meteor.Error('auth-error', body.error);
+        } else {
+          throw new Meteor.Error('auth-error', 'Unable to authenticate Partner proxy');
+        }
+      } else {
+        return self.partner_record = body;
+      }
+    }
+  }
+}
+
+//|OUTPUT_HERE|
+

@@ -1,0 +1,13 @@
+var Connector = OfferJar.Connector;
+
+var Global  = function() {
+  Connector.call(token);
+}
+
+Global.prototype = Object.create(Connector.prototype);
+Global.prototype.constructor = Global;
+
+OfferJar.Global = Global;
+
+//|OUTPUT_HERE|
+

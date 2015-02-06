@@ -12,7 +12,22 @@ Package.describe({
 
 Package.onUse(function(api) {
   api.versionsFrom('1.0.3.1');
-  api.addFiles('ronenm:offerjar-api.js');
+  api.use('reactive-var','client');
+  api.use('underscore');
+  
+  // connector.js  conversation_proxy.js  global.js  offerjar.js  partner_proxy.js  store.js
+  var base_files = ['offerjar.js', 'connector.js', 'global.js'];
+  var server_files = ['conversation_proxy.js', 'partner_proxy.js', 'store.js'];
+  
+  for(var idx = 0; idx < base_files.length; idx++) {
+    api.add_files("lib/" + base_files[idx]);
+  }
+  
+  for(var idx = 0; idx < server_files.length; idx++) {
+    api.add_files("lib/" + server_files[idx], 'server');
+  }
+  
+  api.export('OfferJar');
 });
 
 Package.onTest(function(api) {

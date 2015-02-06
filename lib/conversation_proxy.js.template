@@ -1,0 +1,110 @@
+var Connector = OfferJar.Connector;
+
+var ConversationProxy = function(token) {
+  Connector.call(this,token);
+}
+
+OfferJar.ConversationProxy = ConversationProxy;
+
+var proto = ConversationProxy.prototype = Object.create(Connector.prototype);
+
+proto.constructor = ConversationProxy;
+
+proto.connect = function(uid,callback) {
+  this.uid = uid;
+  return this.load(callback);
+}
+
+// rec is optional
+proto.load = function(rec,callback) {
+  if (typeof(rec) == 'object') {
+    this.conversation_proxy_rec = rec;
+    if (typeof(callback) == 'function') {
+      callback.call(this.false,undefined,rec);
+    }
+    return rec;
+  } else {
+    if (typeof(rec) == 'function') {
+      callback = rec;
+    }
+    
+    if (typeof(callback) == 'function') {
+      var self = this;
+      return this.get(undefined,function (error, result) {
+        if (!error) {
+          self.conversation_proxy_rec = result.data;
+        }
+        callback.call(this,error,result);
+      });
+    } else {
+      var result = this.get();
+      this.conversation_proxy_rec = result.data;
+      return this.conversation_proxy_rec;
+    }
+  }
+}
+
+proto.create_by_client_id = function(client_id,client_secret,add_params,callback) {
+  if (typeof(callback) == 'function') {
+    var self = this;
+    return this.parent.generateToken(client_id,client_secret,function(error, result) {
+      var token_rec = result.body.token;
+      if (token_rec.error) {
+        error = new Meteor.Error("token-error", token_rec.error);
+        callback.call(this,error,result);
+      } else if (!token_rec.access_token) {
+        callback.call(this,error || new Meteor.Error('token-error','Missing token'),result);
+      } else {
+        self.create_by_token(token_rec.access_token,add_params,callback);
+      }
+    });
+  } else {
+    var result = this.parent.generateToken(client_id,client_secret);
+    var token_rec = result.body.token;
+    if (token_rec.error) {
+      throw new Meteor.Error("token-error", token_rec.error);
+    } else if (!token_rec.access_token) {
+      throw new Meteor.Error("token-error", 'Missing token');
+    } else {
+      return self.create_by_token(token_rec.access_token,add_params);
+    }
+  }
+  
+}
+
+proto.create_by_token = function(token,add_params,callback) {
+  var self = this;
+  if (typeof(callback) == 'function') {
+    return this.create(add_params,function(error,result) {
+      var body = result.data;
+      if (!body.conversation_proxy || !body.conversation_proxy.uid) {
+        if (body.error) {
+          callback.call(this,new Meteor.Error('create-failed',body.error),result);
+        } else {
+          callback.call(this,error || new Meteor.Error('create-failed','Unable to create Conversation proxy'),result);
+        }
+      } else {
+        self.conversation_proxy_rec = body;
+        self.uid = body.conversation_proxy.uid;
+        callback.call(this,error,result);
+      }
+    });
+  } else {
+    var result = this.create(add_params);
+    var body = result.data;
+    if (!body.conversation_proxy || !body.conversation_proxy.uid) {
+      if (body.error) {
+        throw new Meteor.Error('create-failed',body.error);
+      } else {
+        throw new Meteor.Error('create-failed','Unable to create Conversation proxy');
+      }
+    } else {
+      self.conversation_proxy_rec = body;
+      self.uid = body.conversation_proxy.uid;
+      return self.conversation_proxy_rec;
+    }
+  }
+}
+
+//|OUTPUT_HERE|
+
