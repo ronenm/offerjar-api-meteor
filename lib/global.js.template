@@ -1,7 +1,7 @@
 var Connector = OfferJar.Connector;
 
 var Global  = function() {
-  Connector.call(token);
+  Connector.call(this);
 }
 
 Global.prototype = Object.create(Connector.prototype);

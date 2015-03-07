@@ -1,6 +1,6 @@
 Package.describe({
   name: 'ronenm:offerjar-api',
-  version: '0.0.1',
+  version: '0.0.2',
   // Brief, one-line summary of the package.
   summary: 'Access the InKomerce/OfferJar API from meteor',
   // URL to the Git repository containing the source code for this package.
@@ -14,6 +14,9 @@ Package.onUse(function(api) {
   api.versionsFrom('1.0.3.1');
   api.use('reactive-var','client');
   api.use('underscore');
+  api.use('mrt:allow-env');
+  api.imply('mrt:allow-env')
+  api.use('http');
   
   // connector.js  conversation_proxy.js  global.js  offerjar.js  partner_proxy.js  store.js
   var base_files = ['offerjar.js', 'connector.js', 'global.js'];

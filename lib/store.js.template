@@ -44,10 +44,10 @@ proto.load = function(rec,callback) {
   }
 }
 
-proto.create_by_client_id = function(client_id,client_secret,add_params,callback) {
+proto.createByClientId = function(clientId,clientSecret,add_params,callback) {
   if (typeof(callback) == 'function') {
     var self = this;
-    return this.parent.generateToken(client_id,client_secret,function(error, result) {
+    return this.parent.generateToken(clientId,clientSecret,function(error, result) {
       var token_rec = result.body.token;
       if (token_rec.error) {
         error = new Meteor.Error("token-error", token_rec.error);
@@ -55,25 +55,26 @@ proto.create_by_client_id = function(client_id,client_secret,add_params,callback
       } else if (!token_rec.access_token) {
         callback.call(this,error || new Meteor.Error('token-error','Missing token'),result);
       } else {
-        self.create_by_token(token_rec.access_token,add_params,callback);
+        self.createByToken(token_rec.access_token,add_params,callback);
       }
     });
   } else {
-    var result = this.parent.generateToken(client_id,client_secret);
+    var result = this.parent.generateToken(clientId,clientSecret);
     var token_rec = result.body.token;
     if (token_rec.error) {
       throw new Meteor.Error("token-error", token_rec.error);
     } else if (!token_rec.access_token) {
       throw new Meteor.Error("token-error", 'Missing token');
     } else {
-      return self.create_by_token(token_rec.access_token,add_params);
+      return self.createByToken(token_rec.access_token,add_params);
     }
   }
   
 }
 
-proto.create_by_token = function(token,add_params,callback) {
+proto.createByToken = function(token,add_params,callback) {
   var self = this;
+  self.token = token;
   if (typeof(callback) == 'function') {
     return this.create(add_params,function(error,result) {
       var body = result.data;
@@ -109,7 +110,7 @@ proto.create_by_token = function(token,add_params,callback) {
 //|OUTPUT_HERE|
 
 ////##################################################################################
-//// upload_product_image: Upload an image
+//// uploadProductImage: Upload an image
 ////
 //// Parameters:
 ////    rid (String): A valid product id
@@ -119,7 +120,7 @@ proto.create_by_token = function(token,add_params,callback) {
 ////    title (Optional,String): The title of the image
 ////
 ////##################################################################################
-//Store.prototype.upload_product_image = function(rid, file_name, add_params, callback) {
+//Store.prototype.uploadProductImage = function(rid, file_name, add_params, callback) {
 //  var splitted_path = file_name.split("/")
 //  var p_name = splitted_path.pop();
 //  var this_obj = this;
@@ -134,7 +135,7 @@ proto.create_by_token = function(token,add_params,callback) {
 //      content: data
 //    }
 //    add_params.send_xml = true;
-//    this_obj.api_call('/stores/:uid/products/:rid/images/upload', 'post', params, add_params,callback);
+//    this_obj.apiCall('/stores/:uid/products/:rid/images/upload', 'post', params, add_params,callback);
 //  });
 //}
 
