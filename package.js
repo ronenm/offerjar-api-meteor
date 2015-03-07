@@ -14,7 +14,7 @@ Package.onUse(function(api) {
   api.versionsFrom('1.0.3.1');
   api.use('reactive-var','client');
   api.use('underscore');
-  api.use('mrt:allow-env');
+  api.use('mrt:allow-env@0.0.1');
   api.imply('mrt:allow-env')
   api.use('http');
   
