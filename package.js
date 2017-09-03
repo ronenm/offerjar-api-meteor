@@ -1,6 +1,6 @@
 Package.describe({
   name: 'ronenm:offerjar-api',
-  version: '1.0.2',
+  version: '1.0.3',
   // Brief, one-line summary of the package.
   summary: 'Access the InKomerce/OfferJar API from meteor',
   // URL to the Git repository containing the source code for this package.
